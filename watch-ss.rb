@@ -118,7 +118,7 @@ end
 
 $loop = 9999
 $pause = 30
-$thresold = 10
+$threshold = 10
 $pict = "./warn.jpg"
 $rules = ALLOW
 
@@ -130,8 +130,7 @@ while (arg = ARGV.shift)
   when /--pause/
     $pause = ARGV.shift.to_i
   when /--thres/
-    $threshold = ARGV.shift
-    $threshold = $threshold.to_i
+    $threshold = ARGV.shift.to_i
   when /--pict/
     $pict = ARGV.shift
   when /--filter/
