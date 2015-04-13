@@ -1,7 +1,7 @@
 #!/usr/bin/env jruby
 # coding: utf-8
 
-DEBUG = true
+DEBUG = false
 def debug(s)
   STDERR.puts "debug: " + s if DEBUG
 end
@@ -122,8 +122,11 @@ end
 $loop = 9999
 $pause = 30
 $threshold = 10
-$pict = "./warn.jpg"
 $rules = ALLOW
+$pict = "/edu/lib/watch-ss/warn.jpg"
+unless File.exists?($pict)
+  $pict = "./warn.jpg"
+end
 
 while (arg = ARGV.shift)
   case arg
