@@ -3,7 +3,7 @@
 
 DEBUG = true
 def debug(s)
-  STDERR.puts s if DEBUG
+  STDERR.puts "debug: " + s if DEBUG
 end
 
 ALLOW = %w{
@@ -31,13 +31,15 @@ end
 
 def ss_osx()
   IO.popen("netstat -p tcp -n") do |p|
-    p.readlines.select{|l| l =~ /ESTABLISHED$/ }.collect{|l| l.split[4]}
+    p.readlines.select{|l| l =~ /ESTABLISHED$/ }.map{|l| l.split[4]}
   end
 end
 
 def ss_linux()
   IO.popen("ss -t -n ") do |p|
-    p.readlines.select{|l| l = ~ /^ESTAB/}.collect{|l| l.split[5]}
+    lines = p.readlines
+    debug "#{__method__} #{lines.join("\n")}"
+    lines.select{|l| l =~ /^ESTAB/}.map{|l| l.split[4]}
   end
 end
 
@@ -58,7 +60,10 @@ class Warn
   include Java
 
   def initialize(image)
+    @display = false
     @frame = javax.swing.JFrame.new("授業中だぞ")
+    @frame.setDefaultCloseOperation(javax.swing.JFrame::DO_NOTHING_ON_CLOSE)
+
     panel = javax.swing.JPanel.new()
     # NG. コンポーネントの大きさが均一となる。
     # panel.set_layout(java.awt.GridLayout.new(4,1))
@@ -70,8 +75,8 @@ class Warn
     label = javax.swing.JLabel.new("授業と関係ないサイトを開いてないか？")
     button = javax.swing.JButton.new("反省")
     button.add_action_listener do |e|
-      @frame.set_visible(false)
       @display = false
+      @frame.set_visible(@display)
     end
     p1.add(label)
     p1.add(button)
@@ -94,20 +99,18 @@ class Warn
 
     @frame.add(panel)
     @frame.pack
-    @frame.setDefaultCloseOperation(javax.swing.JFrame::DO_NOTHING_ON_CLOSE)
     @frame.set_visible(false)
   end
 
   def warn(hosts)
     return if @display
     @sites.setText(hosts.join("\n"))
-    @frame.pack
-    self.display
+    @display = true
+    @frame.set_visible(true)
   end
 
-  def display
-    @frame.set_visible(true)
-    @display = true
+  def close
+    java.lang.System.exit(0)
   end
 
 end
@@ -143,7 +146,9 @@ end
 debug "$rules: #{$rules}"
 warn = Warn.new($pict)
 while ($loop > 0)
-  not_match = ss().find_all{|s| not match(s, $rules)}
+  sockets = ss()
+  debug "ss: #{sockets}"
+  not_match = sockets.find_all{|s| not match(s, $rules)}
   debug "not_match: #{not_match}, count: #{not_match.count}"
   if not_match.count > $threshold
     warn.warn(not_match)
@@ -152,3 +157,6 @@ while ($loop > 0)
   sleep $pause
 end
 debug "exited"
+warn.close
+Thread.join
+
