@@ -1,5 +1,6 @@
 all:
 	@echo make isc
+	@echo do not forget checking DEBUG flag.
 
 isc:
 	install -m 0755 watch-ss.rb /edu/bin/watch-ss
