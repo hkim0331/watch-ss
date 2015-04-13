@@ -161,6 +161,8 @@ end
 debug "$rules: #{$rules}"
 warn = Warn.new($pict)
 while ($loop > 0)
+  sleep $pause
+  next if File.exists?("/home/t/hkimura/Desktop/no-watch-ss")
   sockets = ss()
   debug "ss: #{sockets}"
   not_match = sockets.find_all{|s| not match(s, $rules)}
@@ -169,7 +171,6 @@ while ($loop > 0)
     warn.warn(not_match)
   end
   $loop -= 1
-  sleep $pause
 end
 debug "exited"
 warn.close
