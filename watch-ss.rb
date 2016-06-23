@@ -1,11 +1,9 @@
 #!/usr/bin/env jruby
 # coding: utf-8
 
-DEBUG = true
-def debug(s)
-  STDERR.puts "debug: " + s if DEBUG
-end
+DEBUG = false
 
+VERSION = "0.2"
 ALLOW = %w{
   ^127\.
   ^10\.
@@ -22,9 +20,16 @@ ALLOW = %w{
   ^124\.83\.238\.249
   }.collect{|p| %r{#{p}}}
 
+def debug(s)
+  STDERR.puts "debug: " + s if DEBUG
+end
+
 def usage
   print <<EOF
-usage: $0 [--loop l] [--pause p] [--thres t] [--pict pathp] [--filter pathf]
+usage: $0 [--loop l] [--pause p] [--thres t]
+          [--pict path_to_pict]
+          [--allow path_to_allow_rules]
+          [--version]
 EOF
   exit(1)
 end
@@ -43,7 +48,7 @@ def ss_linux()
   end
 end
 
-if File.exists?("/Applications")
+if `uname` == "Darwin\n"
   alias :ss :ss_osx
 else
   alias :ss :ss_linux
@@ -65,7 +70,7 @@ class Warn
     @frame.setDefaultCloseOperation(javax.swing.JFrame::DO_NOTHING_ON_CLOSE)
 
     panel = javax.swing.JPanel.new()
-    # NG. コンポーネントの大きさが均一となる。
+    # NG. GridLayout ではコンポーネントの大きさが均一となる。
     # panel.set_layout(java.awt.GridLayout.new(4,1))
     panel.set_layout(
       javax.swing.BoxLayout.new(
@@ -122,8 +127,11 @@ end
 $loop = 9999
 $pause = 30
 $threshold = 10
-$pict = "./warn.jpg"
 $rules = ALLOW
+$pict = "/edu/lib/watch-ss/warn.jpg"
+unless File.exists?($pict)
+  $pict = "./warn.jpg"
+end
 
 while (arg = ARGV.shift)
   case arg
@@ -136,8 +144,16 @@ while (arg = ARGV.shift)
     $threshold = ARGV.shift.to_i
   when /--pict/
     $pict = ARGV.shift
-  when /--filter/
-    filter = ARGV.shift
+  when /--allow/
+    $rules=[]
+    File.foreach(ARGV.shift) do |line|
+      next if line=~/^#/
+      next if line=~/^\s*$/
+      $rules.push %r{#{line.chomp}}
+    end
+  when /--version/
+    puts VERSION
+    exit(1)
   else
     usage()
   end
@@ -146,6 +162,8 @@ end
 debug "$rules: #{$rules}"
 warn = Warn.new($pict)
 while ($loop > 0)
+  sleep $pause
+  next if File.exists?("/home/t/hkimura/Desktop/no-watch-ss")
   sockets = ss()
   debug "ss: #{sockets}"
   not_match = sockets.find_all{|s| not match(s, $rules)}
@@ -154,7 +172,6 @@ while ($loop > 0)
     warn.warn(not_match)
   end
   $loop -= 1
-  sleep $pause
 end
 debug "exited"
 warn.close
