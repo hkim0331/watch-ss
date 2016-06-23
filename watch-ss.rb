@@ -2,7 +2,7 @@
 # coding: utf-8
 # watch sockets status
 
-VERSION = "0.2"
+VERSION = "0.3"
 
 ALLOW = %w{
   ^127\.
@@ -180,7 +180,6 @@ while ($loop > 0)
   else
     debug "check ss()"
   end
-
   # here is the main part of this script.
   connections = ss()
   debug "ss: #{connections}"
@@ -188,11 +187,7 @@ while ($loop > 0)
   debug "disallow: #{disallow}, count: #{disallow.count}"
   warn.warn(disallow) if disallow.count > $threshold
   #
-  
   $loop -= 1
 end
-
-debug "exited"
-warn.close
 
 Thread.join
