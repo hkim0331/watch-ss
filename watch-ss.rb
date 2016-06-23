@@ -1,5 +1,6 @@
 #!/usr/bin/env jruby
 # coding: utf-8
+# watch sockets status
 
 DEBUG = true
 VERSION = "0.2"
@@ -17,7 +18,10 @@ ALLOW = %w{
   ^124\.83\.151\.162
   ^124\.83\.199\.146
   ^124\.83\.238\.249
-  }.collect{|p| %r{#{p}}}
+  ^216\.58\.197\.195
+  ^216\.143\.70\.
+  ^52\.192\.191\.104
+  }.map{|p| %r{#{p}}}
 
 def debug(s)
   STDERR.puts "debug: " + s if DEBUG
@@ -47,10 +51,16 @@ def ss_linux()
   end
 end
 
-if `uname` == "Darwin\n"
-  alias :ss :ss_osx
-else
-  alias :ss :ss_linux
+def ss()
+  os = `uname`
+  case os
+  when /Darwin/
+    ss_osx()
+  when /Linux/
+    ss_linux()
+  else
+    raise "unknown os:#{os}"
+  end
 end
 
 def match(word, rules)
