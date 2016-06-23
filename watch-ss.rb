@@ -3,6 +3,7 @@
 # watch sockets status
 
 DEBUG = true
+
 VERSION = "0.2"
 ALLOW = %w{
   ^127\.
@@ -52,9 +53,9 @@ def ss()
   os = `uname`
   case os
   when /Darwin/
-    ss_osx()
+    alias :ss :ss_osx
   when /Linux/
-    ss_linux()
+    alias :ss :ss_linux
   else
     raise "unknown os:#{os}"
   end
