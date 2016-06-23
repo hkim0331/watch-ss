@@ -1,5 +1,6 @@
 #!/usr/bin/env jruby
 # coding: utf-8
+# watch sockets status
 
 DEBUG = true
 VERSION = "0.2"
@@ -47,10 +48,16 @@ def ss_linux()
   end
 end
 
-if `uname` == "Darwin\n"
-  alias :ss :ss_osx
-else
-  alias :ss :ss_linux
+def ss()
+  os = `uname`
+  case os
+  when /Darwin/
+    ss_osx()
+  when /Linux/
+    ss_linux()
+  else
+    raise "unknown os:#{os}"
+  end
 end
 
 def match(word, rules)
@@ -159,7 +166,7 @@ while (arg = ARGV.shift)
 end
 
 debug "$rules: #{$rules}"
-warn = Warn.new($pict)
+warn = Warn.new($pict) 
 while ($loop > 0)
   sleep $pause
   next if File.exists?("/home/t/hkimura/Desktop/no-watch-ss")
