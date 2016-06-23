@@ -1,0 +1,10 @@
+# 2016-06-23
+
+* no-watch-ss ファイルが見つかると、警告を表示しない。
+* no-watch-ss のありかは version 0.3 では固定。
+
+    * /home/t/hkimura/Desktop/no-watch-ss
+    * --debug オプションで ./no-watch-ss
+
+---
+hkimura.
