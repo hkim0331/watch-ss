@@ -2,8 +2,8 @@
 # coding: utf-8
 # watch sockets status
 
-DEBUG = true
-VERSION = "0.2"
+VERSION = "0.3"
+
 ALLOW = %w{
   ^127\.
   ^10\.
@@ -18,10 +18,13 @@ ALLOW = %w{
   ^124\.83\.151\.162
   ^124\.83\.199\.146
   ^124\.83\.238\.249
-  }.collect{|p| %r{#{p}}}
+  ^216\.58\.197\.195
+  ^216\.143\.70\.
+  ^52\.192\.191\.104
+  }.map{|p| %r{#{p}}}
 
 def debug(s)
-  STDERR.puts "debug: " + s if DEBUG
+  STDERR.puts "debug: " + s if $debug
 end
 
 def usage
@@ -45,18 +48,6 @@ def ss_linux()
     lines = p.readlines
     debug "#{__method__} #{lines.join("\n")}"
     lines.select{|l| l =~ /^ESTAB/}.map{|l| l.split[4]}
-  end
-end
-
-def ss()
-  os = `uname`
-  case os
-  when /Darwin/
-    ss_osx()
-  when /Linux/
-    ss_linux()
-  else
-    raise "unknown os:#{os}"
   end
 end
 
@@ -130,17 +121,33 @@ end
 # main starts here
 #
 
+case `uname`
+when /Darwin/
+  alias :ss :ss_osx
+when /Linux/
+  alias :ss :ss_linux
+else
+  raise "unknown os:#{`uname`}"
+end
+
 $loop = 9999
 $pause = 30
 $threshold = 10
 $rules = ALLOW
 $pict = "/edu/lib/watch-ss/warn.jpg"
-unless File.exists?($pict)
-  $pict = "./warn.jpg"
-end
+$no_watch = "/home/t/hkimura/Desktop/no-watch-ss"
 
+$debug = false
 while (arg = ARGV.shift)
   case arg
+  when /--debug/
+    $debug = true
+    $loop = 9999
+    $pause = 3
+    $threshold = 3
+    $pict = "./warn.jpg"
+    $no_watch = "./no-watch-ss"
+    break
   when /--loop/
     $loop = ARGV.shift.to_i
     $loop = 99999 if $loop == 0
@@ -151,7 +158,7 @@ while (arg = ARGV.shift)
   when /--pict/
     $pict = ARGV.shift
   when /--allow/
-    $rules=[]
+    $rules = []
     File.foreach(ARGV.shift) do |line|
       next if line=~/^#/
       next if line=~/^\s*$/
@@ -166,20 +173,24 @@ while (arg = ARGV.shift)
 end
 
 debug "$rules: #{$rules}"
-warn = Warn.new($pict) 
+warn = Warn.new($pict)
+
 while ($loop > 0)
   sleep $pause
-  next if File.exists?("/home/t/hkimura/Desktop/no-watch-ss")
-  sockets = ss()
-  debug "ss: #{sockets}"
-  not_match = sockets.find_all{|s| not match(s, $rules)}
-  debug "not_match: #{not_match}, count: #{not_match.count}"
-  if not_match.count > $threshold
-    warn.warn(not_match)
+  if File.exists?($no_watch)
+    debug "no-watch-ss found"
+    next
+  else
+    debug "check ss()"
   end
+  # here is the main part of this script.
+  connections = ss()
+  debug "ss: #{connections}"
+  disallow = connections.find_all{|s| not match(s, $rules)}
+  debug "disallow: #{disallow}, count: #{disallow.count}"
+  warn.warn(disallow) if disallow.count > $threshold
+  #
   $loop -= 1
 end
-debug "exited"
-warn.close
-Thread.join
 
+Thread.join
